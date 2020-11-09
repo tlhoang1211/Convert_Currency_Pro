@@ -37,28 +37,27 @@ public class MainActivity extends AppCompatActivity {
         convertFromDropdown = (Spinner) findViewById(R.id.convert_from);
 
         //Adding Functionality
-        String[] dropDownList = {"INR", "INR", "EUR", "NZD", "AUD", "JPY", "SGD", "CAD", "GBP", "USD"};
+        String[] dropDownList = {"INR", "EUR", "NZD", "AUD", "JPY", "SGD", "CAD", "GBP", "USD", "ARS"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, dropDownList);
         convertToDropdown.setAdapter(adapter);
         convertFromDropdown.setAdapter(adapter);
 
-        RetrofitInterface retrofitInterface = RetrofitBuilder.getRetrofitInstance().create(RetrofitInterface.class);
-        Call<JsonObject> call = retrofitInterface.getExchangeCurrency(convertFromDropdown.getSelectedItem().toString());
-        call.enqueue(new Callback<JsonObject>() {
+        TextWatcher textWatcher = new TextWatcher() {
             @Override
-            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                JsonObject res = response.body();
-                assert res != null;
-                JsonObject rates = res.getAsJsonObject("rates");
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                TextWatcher textWatcher = new TextWatcher() {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                RetrofitInterface retrofitInterface = RetrofitBuilder.getRetrofitInstance().create(RetrofitInterface.class);
+                Call<JsonObject> call = retrofitInterface.getExchangeCurrency(convertFromDropdown.getSelectedItem().toString());
+                call.enqueue(new Callback<JsonObject>() {
                     @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-                    }
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                        JsonObject res = response.body();
+                        assert res != null;
+                        JsonObject rates = res.getAsJsonObject("rates");
                         try {
                             double currency = Double.parseDouble(currencyToBeConverted.getText().toString());
                             double multiplier = Double.parseDouble(rates.get(convertToDropdown.getSelectedItem().toString()).toString());
@@ -78,17 +77,17 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void afterTextChanged(Editable s) {
+                    public void onFailure(Call<JsonObject> call, Throwable t) {
 
                     }
-                };
-                currencyToBeConverted.addTextChangedListener(textWatcher);
+                });
             }
 
             @Override
-            public void onFailure(Call<JsonObject> call, Throwable t) {
+            public void afterTextChanged(Editable s) {
 
             }
-        });
+        };
+        currencyToBeConverted.addTextChangedListener(textWatcher);
     }
 }
